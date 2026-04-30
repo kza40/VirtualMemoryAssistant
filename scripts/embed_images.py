@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import cv2
 
+from PIL import Image
+
 def read_jsonl( file ):
     """
     Read a JSONL file and return the data as a Python object.
@@ -40,18 +42,32 @@ def load_images( metadata_file ):
         for record in records:
             image_path = record.get("image_path")
 
-        if image_path is None:
-            print("Warning: record is missing 'image_path'. Skipping.")
-            continue
+            if image_path is None:
+                print("Warning: record is missing 'image_path'. Skipping.")
+                continue
 
-        image_path = Path( image_path)
-        if not image_path.exists():
-            print(f"Warning: image file does not exist: {image_path}")
-            continue
-        
-        image = cv2.imread( str(image_path) )
+            image_path = Path( image_path)
+            if not image_path.exists():
+                print(f"Warning: image file does not exist: {image_path}")
+                continue
+            
+            image = cv2.imread( str(image_path) )
+
+            if image is None:
+                print(f"Warning: failed to load image: {image_path}")
+                continue
+
+            images.append( {
+                "image": image,
+                "image_path": str(image_path),
+                "timestamp": record.get("timestamp")
+                "file_name": record.get("file_name")
+            })
+
     except Exception as error:
         raise RuntimeError(f"Failed to load images from metadata file {metadata_file}: {error}")
+
+    return images
 
 def preprocess_images( images ):
     """
@@ -60,11 +76,30 @@ def preprocess_images( images ):
     """
     preprocessed_images = []
 
-    for image in images:
+    for image_record in images:
         # Placeholder for actual preprocessing steps
-        preprocessed_images.append( image )
+        bgr_image = image_record["image"]
+
+        rgb_image = cv2.cvtColor( bgr_image, cv2.COLOR_BGR2RGB )
+        pil_image = Image.fromarray( rgb_image )
+
+        preprocessed_images.append( {
+            "image": pil_image,
+            "image_path": image_record["image_path"],
+            "timestamp": image_record["timestamp"],
+            "file_name": image_record["file_name"]
+        })
 
     return preprocessed_images
+
+def load_clip_model():
+    pass
+
+def generate_embeddings( preprocessed_images, processor, model ):
+    pass
+
+def save_embeddings( base_dir, embeddings_array, mapping ):
+    pass
 
 def main():
     base_dir = Path(__file__).resolve().parent.parent
