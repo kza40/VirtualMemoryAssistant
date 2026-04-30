@@ -9,10 +9,12 @@ import time
 ##### configuration values
 CAMERA_ID = 0
 CAPTURE_INTERVAL_SECONDS = 10
-RAW_IMAGE_FOLDER = Path("data/raw")
-METADATA_FOLDER = Path("data/metadata")
+BASE_DIR = Path(__file__).resolve().parent.parent
+RAW_IMAGE_FOLDER = BASE_DIR / "data" / "raw"
+METADATA_FOLDER = BASE_DIR / "data" / "metadata"
 METADATA_FILE = METADATA_FOLDER / "captures.jsonl"  # JSONL = JSON Lines format
 IMAGE_PREFIX = "frame"
+MAX_CAPTURES = 5 # for testing
 
 def create_directories():
     """
@@ -58,6 +60,8 @@ def save_frame( frame, filename_timestamp ):
 
     if not success:
         raise RuntimeError(f"Failed to save image to {image_path}")
+
+    return image_path
     
 def append_metadata( image_path, iso_timestamp ):
     """
@@ -107,7 +111,8 @@ def main():
     camera = open_camera( CAMERA_ID )
 
     try:
-        capture_loop( camera, CAPTURE_INTERVAL_SECONDS, CAMERA_ID )
+        for _ in range( MAX_CAPTURES ):
+            capture_loop( camera, CAPTURE_INTERVAL_SECONDS, CAMERA_ID )
 
     except KeyboardInterrupt:
         print("\nCapture stopped by user.")
